@@ -1,13 +1,7 @@
-
-/**
- * Module dependencies.
- */
-
 var express = require('express');
+var ArticleProvider = require('./articleprovider-memory').ArticleProvider;
 
 var app = module.exports = express.createServer();
-
-// Configuration
 
 app.configure(function(){
   app.set('views', __dirname + '/views');
@@ -20,20 +14,39 @@ app.configure(function(){
 });
 
 app.configure('development', function(){
-  app.use(express.errorHandler({ dumpExceptions: true, showStack: true })); 
+  app.use(express.errorHandler({ dumpExceptions: true, showStack: true }));
 });
 
 app.configure('production', function(){
-  app.use(express.errorHandler()); 
+  app.use(express.errorHandler());
 });
 
-// Routes
+var articleProvider= new ArticleProvider();
 
 app.get('/', function(req, res){
-  res.render('index', {
-    title: 'Express'
+    articleProvider.findAll( function(error,docs){
+        res.render('index.jade', { locals: {
+            title: 'Blog',
+            articles:docs
+            }
+        });
+    })
+});
+
+app.get('/blog/new', function(req, res){
+    res.render('blog_new.jade', { locals: {
+      title: 'New Post'
+    }
+  });
+});
+
+app.post('/blog/new', function(req, res){
+  articleProvider.save({
+    title: req.param('title'),
+    body: req.param('body')
+  }, function(error, docs){
+    res.redirect('/')
   });
 });
 
 app.listen(3000);
-console.log("Express server listening on port %d in %s mode", app.address().port, app.settings.env);
